@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>블룸케어 (BloomCare) - 산부인과 병원 방문 가이드 및 안내</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Pretendard Font CDN -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Pretendard"', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'Roboto', 'sans-serif'],
+                    },
+                    colors: {
+                        rose: {
+                            50: '#fff1f2',
+                            100: '#ffe4e6',
+                            200: '#fecdd3',
+                            300: '#fda4af',
+                            400: '#fb7185',
+                            500: '#f43f5e',
+                            600: '#e11d48',
+                            700: '#be123c',
+                            800: '#9f1239',
+                            900: '#881337',
+                        },
+                        ivory: {
+                            50: '#fdfcfb',
+                            100: '#faf7f5',
+                            200: '#f5efe9',
+                        },
+                        charcoal: {
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #fdfcfb;
+            color: #1e293b;
+            scroll-behavior: smooth;
+        }
+        /* 인쇄 시 불필요한 UI 숨김 및 문진 메모 카드만 깔끔하게 출력 */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printable-memo-area, #printable-memo-area * {
+                visibility: visible;
+            }
+            #printable-memo-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                border: 2px solid #e11d48 !important;
+                box-shadow: none !important;
+                background: #ffffff !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+        /* 체크박스 커스텀 애니메이션 */
+        .check-item-card input:checked + .check-content {
+            opacity: 0.72;
+        }
+        .check-item-card input:checked + .check-content .item-title {
+            text-decoration: line-through;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-rose-200 selection:text-rose-900">
+
+    <!-- 토스트 알림 메시지 박스 (alert() 대체용) -->
+    <div id="toast-box" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 translate-y-3">
+        <div class="bg-charcoal-900 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 text-sm font-semibold border border-charcoal-700">
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-rose-400 shrink-0"></i>
+            <span id="toast-message">알림 메시지</span>
+        </div>
+    </div>
+
+    <!-- 상단 고정 네비게이션 바 -->
+    <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-rose-100 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16 md:h-20">
+                <!-- 브랜드 로고 -->
+                <a href="#top" class="flex items-center gap-2.5 group focus:outline-none">
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-400 to-rose-600 flex items-center justify-center text-white shadow-md shadow-rose-200 group-hover:scale-105 transition-transform">
+                        <i data-lucide="flower-2" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <span class="text-lg md:text-xl font-extrabold tracking-tight text-charcoal-900 block leading-none">BloomCare</span>
+                        <span class="text-[11px] font-semibold text-rose-500 tracking-wide">산부인과 방문 가이드 & 안내</span>
+                    </div>
+                </a>
+
+                <!-- 섹션 빠른 이동 링크 (데스크톱) -->
+                <nav class="hidden md:flex items-center space-x-1">
+                    <a href="#sec-checklist" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-charcoal-700 hover:text-rose-600 hover:bg-rose-50 transition-colors">
+                        초진 준비 & 문진 메모
+                    </a>
+                    <a href="#sec-process" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-charcoal-700 hover:text-rose-600 hover:bg-rose-50 transition-colors">
+                        진료 절차 & 초음파 안내
+                    </a>
+                    <a href="#sec-tips" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-charcoal-700 hover:text-rose-600 hover:bg-rose-50 transition-colors">
+                        복장 & 예약 팁
+                    </a>
+                    <a href="#sec-faq" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-charcoal-700 hover:text-rose-600 hover:bg-rose-50 transition-colors">
+                        자주 묻는 질문 (FAQ)
+                    </a>
+                </nav>
+
+                <!-- 우측 CTA 버튼 -->
+                <div class="flex items-center gap-2">
+                    <a href="#sec-checklist" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white text-xs sm:text-sm font-bold shadow-md shadow-rose-200 transition-all flex items-center gap-1.5">
+                        <i data-lucide="clipboard-edit" class="w-4 h-4"></i>
+                        <span>문진 메모 작성</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main id="top" class="flex-grow">
+
+        <!-- ===================================================================== -->
+        <!-- 1. HERO SECTION: 안심 메시지와 빠른 이동 버튼                           -->
+        <!-- ===================================================================== -->
+        <section class="relative overflow-hidden bg-gradient-to-b from-rose-50 via-ivory-100 to-ivory-50 pt-10 pb-14 md:pt-16 md:pb-20 border-b border-rose-100/80">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div class="max-w-3xl mx-auto text-center">
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-rose-200 text-rose-600 text-xs sm:text-sm font-bold mb-5 shadow-sm">
+                        <i data-lucide="heart-handshake" class="w-4 h-4 text-rose-500"></i>
+                        첫 산부인과 방문도 긴장하지 않도록 꼼꼼하게 안내해 드립니다
+                    </div>
+
+                    <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-charcoal-900 leading-tight tracking-tight mb-5">
+                        산부인과 방문 가이드 및<br class="sm:hidden" />
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-pink-600">초진 안심 안내</span>
+                    </h1>
+
+                    <p class="text-base sm:text-lg text-charcoal-700 leading-relaxed mb-8">
+                        "병원에 가면 어떤 질문을 받을까?", "미혼인데 내진이나 질 초음파를 꼭 해야 할까?"<br class="hidden sm:inline" />
+                        망설임 때문에 진료를 미루지 않도록, 방문 전 준비물부터 검사 방식, 비밀보장 안내까지 한눈에 정리했습니다.
+                    </p>
+
+                    <!-- 빠른 이동 버튼 (Quick-Jump Buttons) -->
+                    <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+                        <a href="#sec-checklist" class="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-bold text-sm sm:text-base shadow-lg shadow-rose-200 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="check-square" class="w-4 h-4"></i>
+                            초진 준비 체크리스트
+                        </a>
+                        <a href="#sec-process" class="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-white hover:bg-rose-50 text-charcoal-800 border border-rose-200 font-bold text-sm sm:text-base shadow-sm transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="stethoscope" class="w-4 h-4 text-rose-500"></i>
+                            진료 절차 및 초음파 안내
+                        </a>
+                        <a href="#sec-faq" class="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-white hover:bg-rose-50 text-charcoal-800 border border-rose-200 font-bold text-sm sm:text-base shadow-sm transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="help-circle" class="w-4 h-4 text-rose-500"></i>
+                            자주 묻는 질문 FAQ
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================================================================== -->
+        <!-- 2. INTERACTIVE CHECKLIST & DOCTOR MEMO: 초진 준비물 & 문진 메모 작성기  -->
+        <!-- ===================================================================== -->
+        <section id="sec-checklist" class="py-12 md:py-16 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-20">
+            <div class="mb-8">
+                <span class="text-rose-600 font-bold text-xs sm:text-sm tracking-wider uppercase block mb-1">Step 01 · Preparation</span>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-charcoal-900">산부인과 초진 준비물 & 의사에게 보여줄 문진 메모</h2>
+                <p class="text-sm sm:text-base text-charcoal-700 mt-2">
+                    방문 전 준비물을 하나씩 체크하고, 오른쪽 메모장에 내 증상을 미리 적어보세요. 진료실에서 휴대폰 화면으로 바로 보여주거나 복사·인쇄하여 사용할 수 있습니다.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <!-- 좌측: 인터랙티브 초진 준비물 체크리스트 (6컬럼) -->
+                <div class="lg:col-span-6 bg-white rounded-3xl p-6 sm:p-7 border border-rose-100 shadow-md">
+                    <div class="flex items-center justify-between pb-4 mb-5 border-b border-gray-100">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold">
+                                <i data-lucide="list-checks" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-extrabold text-charcoal-900 text-lg">초진 필수 준비 체크리스트</h3>
+                                <p class="text-xs text-gray-500">항목을 클릭하여 준비 완료 표시를 해보세요</p>
+                            </div>
+                        </div>
+                        <span id="prep-progress-badge" class="px-3 py-1 rounded-full bg-rose-50 text-rose-600 text-xs font-extrabold border border-rose-200">
+                            0 / 6 완료
+                        </span>
+                    </div>
+
+                    <div class="space-y-3" id="prep-checklist">
+                        <!-- 항목 1 -->
+                        <label class="check-item-card flex items-start gap-3.5 p-4 rounded-2xl bg-ivory-100/80 hover:bg-rose-50/60 border border-rose-100/80 cursor-pointer transition-all">
+                            <input type="checkbox" onchange="updatePrepProgress()" class="prep-cb mt-1 w-4 h-4 accent-rose-600 rounded cursor-pointer">
+                            <div class="check-content transition-opacity">
+                                <span class="item-title font-bold text-charcoal-900 text-sm sm:text-base block">1. 본인 확인용 신분증 (필수 지참)</span>
+                                <span class="text-xs text-gray-600 mt-0.5 block leading-relaxed">
+                                    건강보험 본인확인 의무화 제도에 따라 주민등록증, 운전면허증, 여권 또는 모바일 신분증을 반드시 지참해야 보험 적용을 받습니다.
+                                </span>
+                            </div>
+                        </label>
+
+                        <!-- 항목 2 -->
+                        <label class="check-item-card flex items-start gap-3.5 p-4 rounded-2xl bg-ivory-100/80 hover:bg-rose-50/60 border border-rose-100/80 cursor-pointer transition-all">
+                            <input type="checkbox" onchange="updatePrepProgress()" class="prep-cb mt-1 w-4 h-4 accent-rose-600 rounded cursor-pointer">
+                            <div class="check-content transition-opacity">
+                                <span class="item-title font-bold text-charcoal-900 text-sm sm:text-base block">2. 마지막 생리 시작일 (LMP) 확인</span>
+                                <span class="text-xs text-gray-600 mt-0.5 block leading-relaxed">
+                                    의사 선생님이 가장 먼저 묻는 질문입니다. 최근 생리가 시작된 날짜(월/일)를 달력이나 생리 주기 앱에서 미리 확인해 두세요.
+                                </span>
+                            </div>
+                        </label>
+
+                        <!-- 항목 3 -->
+                        <label class="check-item-card flex items-start gap-3.5 p-4 rounded-2xl bg-ivory-100/80 hover:bg-rose-50/60 border border-rose-100/80 cursor-pointer transition-all">
+                            <input type="checkbox" onchange="updatePrepProgress()" class="prep-cb mt-1 w-4 h-4 accent-rose-600 rounded cursor-pointer">
+                            <div class="check-content transition-opacity">
+                                <span class="item-title font-bold text-charcoal-900 text-sm sm:text-base block">3. 평소 생리 주기 및 지속 기간 파악</span>
+                                <span class="text-xs text-gray-600 mt-0.5 block leading-relaxed">
+                                    생리 시작일부터 다음 생리 시작일까지의 간격(예: 28일, 불규칙)과 생리가 며칠간 지속되는지(예: 5일) 파악해 가세요.
+                                </span>
+                            </div>
+                        </label>
+
+                        <!-- 항목 4 -->
+                        <label class="check-item-card flex items-start gap-3.5 p-4 rounded-2xl bg-ivory-100/80 hover:bg-rose-50/60 border border-rose-100/80 cursor-pointer transition-all">
+                            <input type="checkbox" onchange="updatePrepProgress()" class="prep-cb mt-1 w-4 h-4 accent-rose-600 rounded cursor-pointer">
+                            <div class="check-content transition-opacity">
+                                <span class="item-title font-bold text-charcoal-900 text-sm sm:text-base block">4. 현재 복용 중인 약물·진통제 이름 메모</span>
+                                <span class="text-xs text-gray-600 mt-0.5 block leading-relaxed">
+                                    복용 중인 생리통 진통제(성분명), 피임약, 한약, 다이어트약, 영양제 이름을 적어두면 약물 중복 처방을 피할 수 있습니다.
+                                </span>
+                            </div>
+                        </label>
+
+                        <!-- 항목 5 -->
+                        <label class="check-item-card flex items-start gap-3.5 p-4 rounded-2xl bg-ivory-100/80 hover:bg-rose-50/60 border border-rose-100/80 cursor-pointer transition-all">
+                            <input type="checkbox" onchange="updatePrepProgress()" class="prep-cb mt-1 w-4 h-4 accent-rose-600 rounded cursor-pointer">
+                            <div class="check-content transition-opacity">
+                                <span class="item-title font-bold text-charcoal-900 text-sm sm:text-base block">5. 증상 양상 및 출혈량 구체적 정리</span>
+                                <span class="text-xs text-gray-600 mt-0.5 block leading-relaxed">
+                                    하루 패드 교체 횟수, 핏덩어리 유무, 통증이 시작되는 시점, 어지러움·구토 동반 여부를 정리하면 진단 정확도가 높아집니다.
+                                </span>
+                            </div>
+                        </label>
+
+                        <!-- 항목 6 -->
+                        <label class="check-item-card flex items-start gap-3.5 p-4 rounded-2xl bg-ivory-100/80 hover:bg-rose-50/60 border border-rose-100/80 cursor-pointer transition-all">
+                            <input type="checkbox" onchange="updatePrepProgress()" class="prep-cb mt-1 w-4 h-4 accent-rose-600 rounded cursor-pointer">
+                            <div class="check-content transition-opacity">
+                                <span class="item-title font-bold text-charcoal-900 text-sm sm:text-base block">6. 탈착이 편한 복장 & 예비 생리대 챙기기</span>
+                                <span class="text-xs text-gray-600 mt-0.5 block leading-relaxed">
+                                    초음파 검사 시 탈의가 편한 치마나 넉넉한 바지를 입고, 진찰 후 소량의 분비물이나 출혈에 대비해 여분 생리대를 챙겨주세요.
+                                </span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 우측: 의사에게 바로 보여주는 나의 문진 메모 작성 카드 (6컬럼) -->
+                <div id="printable-memo-area" class="lg:col-span-6 bg-white rounded-3xl p-6 sm:p-7 border-2 border-rose-200 shadow-lg shadow-rose-100/50">
+                    <div class="flex flex-wrap items-center justify-between gap-2 pb-4 mb-5 border-b border-rose-100">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-9 h-9 rounded-xl bg-rose-500 text-white flex items-center justify-center">
+                                <i data-lucide="file-heart" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-extrabold text-charcoal-900 text-lg">진료실 제출용 나의 문진 메모</h3>
+                                <p class="text-xs text-rose-600 font-medium">작성 후 복사하거나 진료실에서 바로 보여주세요</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="clearMemoForm()" class="no-print text-xs font-semibold text-gray-500 hover:text-rose-600 px-2.5 py-1.5 rounded-lg hover:bg-rose-50 transition-colors">
+                            초기화
+                        </button>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            <div>
+                                <label for="memo-lmp" class="block text-xs font-bold text-charcoal-800 mb-1.5">마지막 생리 시작일</label>
+                                <input type="date" id="memo-lmp" class="w-full px-3.5 py-2.5 rounded-xl bg-ivory-100 border border-gray-200 focus:border-rose-400 focus:bg-white outline-none text-sm text-charcoal-900">
+                            </div>
+                            <div>
+                                <label for="memo-cycle" class="block text-xs font-bold text-charcoal-800 mb-1.5">평소 생리 주기 / 기간</label>
+                                <input type="text" id="memo-cycle" placeholder="예: 28일 주기 / 5일간 지속" class="w-full px-3.5 py-2.5 rounded-xl bg-ivory-100 border border-gray-200 focus:border-rose-400 focus:bg-white outline-none text-sm text-charcoal-900">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-charcoal-800 mb-1.5">주요 방문 목적 및 불편 증상 (중복 선택 가능)</label>
+                            <div class="flex flex-wrap gap-2" id="symptom-tags">
+                                <button type="button" onclick="toggleSymptomTag(this)" class="symptom-tag px-3 py-1.5 rounded-xl text-xs font-semibold bg-ivory-100 text-charcoal-700 border border-gray-200 hover:border-rose-300 transition-all">극심한 생리통</button>
+                                <button type="button" onclick="toggleSymptomTag(this)" class="symptom-tag px-3 py-1.5 rounded-xl text-xs font-semibold bg-ivory-100 text-charcoal-700 border border-gray-200 hover:border-rose-300 transition-all">생리 주기 불규칙·무월경</button>
+                                <button type="button" onclick="toggleSymptomTag(this)" class="symptom-tag px-3 py-1.5 rounded-xl text-xs font-semibold bg-ivory-100 text-charcoal-700 border border-gray-200 hover:border-rose-300 transition-all">과다출혈·핏덩어리</button>
+                                <button type="button" onclick="toggleSymptomTag(this)" class="symptom-tag px-3 py-1.5 rounded-xl text-xs font-semibold bg-ivory-100 text-charcoal-700 border border-gray-200 hover:border-rose-300 transition-all">부정출혈</button>
+                                <button type="button" onclick="toggleSymptomTag(this)" class="symptom-tag px-3 py-1.5 rounded-xl text-xs font-semibold bg-ivory-100 text-charcoal-700 border border-gray-200 hover:border-rose-300 transition-all">질 분비물·가려움</button>
+                                <button type="button" onclick="toggleSymptomTag(this)" class="symptom-tag px-3 py-1.5 rounded-xl text-xs font-semibold bg-ivory-100 text-charcoal-700 border border-gray-200 hover:border-rose-300 transition-all">정기 검진·피임 상담</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="memo-meds" class="block text-xs font-bold text-charcoal-800 mb-1.5">복용 중인 약물 / 진통제 / 기저질환</label>
+                            <input type="text" id="memo-meds" placeholder="예: 이부프로펜 하루 3알 복용 중, 알레르기 없음" class="w-full px-3.5 py-2.5 rounded-xl bg-ivory-100 border border-gray-200 focus:border-rose-400 focus:bg-white outline-none text-sm text-charcoal-900">
+                        </div>
+
+                        <div>
+                            <label for="memo-notes" class="block text-xs font-bold text-charcoal-800 mb-1.5">의사 선생님께 꼭 물어보고 싶은 질문 & 추가 메모</label>
+                            <textarea id="memo-notes" rows="3" placeholder="예: 3개월째 생리양이 갑자기 늘고 어지럽습니다. 복부 초음파로 먼저 검사받고 싶습니다." class="w-full px-3.5 py-2.5 rounded-xl bg-ivory-100 border border-gray-200 focus:border-rose-400 focus:bg-white outline-none text-sm text-charcoal-900 resize-none"></textarea>
+                        </div>
+
+                        <!-- 복사 및 인쇄 행동 유도 버튼 -->
+                        <div class="no-print pt-2 flex flex-col sm:flex-row gap-2.5">
+                            <button type="button" onclick="copyMemoToClipboard()" class="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-bold text-sm shadow-md shadow-rose-200 transition-all flex items-center justify-center gap-2">
+                                <i data-lucide="copy" class="w-4 h-4"></i>
+                                문진 메모 복사하기
+                            </button>
+                            <button type="button" onclick="window.print()" class="py-3 px-4 rounded-2xl bg-charcoal-800 hover:bg-charcoal-900 text-white font-bold text-sm transition-all flex items-center justify-center gap-2">
+                                <i data-lucide="printer" class="w-4 h-4"></i>
+                                메모 인쇄하기
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ===================================================================== -->
+        <!-- 3. CLINICAL PROCESS & ULTRASOUND GUIDE: 진료 절차 및 초음파 안심 가이드   -->
+        <!-- ===================================================================== -->
+        <section id="sec-process" class="py-12 md:py-16 bg-ivory-100 border-y border-rose-100/80 scroll-mt-20">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center max-w-3xl mx-auto mb-12">
+                    <span class="text-rose-600 font-bold text-xs sm:text-sm tracking-wider uppercase block mb-1">Step 02 · Clinical Process</span>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-charcoal-900 mb-3">산부인과 진료 프로세스 및 초음파 안심 가이드</h2>
+                    <p class="text-sm sm:text-base text-charcoal-700">
+                        병원에 도착해서 귀가하기까지의 5단계 절차와, 환자분의 상태에 맞게 선택할 수 있는 초음파 검사 방법을 투명하게 안내합니다.
+                    </p>
+                </div>
+
+                <!-- 5단계 진료 프로세스 타임라인 -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-14">
+                    <div class="bg-white rounded-3xl p-5 border border-rose-100 shadow-sm relative">
+                        <span class="inline-block px-2.5 py-1 rounded-lg bg-rose-500 text-white text-xs font-extrabold mb-3">STEP 01</span>
+                        <h3 class="font-extrabold text-charcoal-900 text-base mb-1.5">접수 및 신분증 확인</h3>
+                        <p class="text-xs sm:text-sm text-charcoal-700 leading-relaxed">
+                            데스크에서 신분증을 제시하고 초진 문진표(마지막 생리일, 증상, 성경험 유무 등)를 작성합니다.
+                        </p>
+                    </div>
+
+                    <div class="bg-white rounded-3xl p-5 border border-rose-100 shadow-sm relative">
+                        <span class="inline-block px-2.5 py-1 rounded-lg bg-rose-500 text-white text-xs font-extrabold mb-3">STEP 02</span>
+                        <h3 class="font-extrabold text-charcoal-900 text-base mb-1.5">간호사 예진 및 혈압</h3>
+                        <p class="text-xs sm:text-sm text-charcoal-700 leading-relaxed">
+                            기본 혈압과 체중을 측정하고 간호사가 주된 불편 증상과 알레르기 여부를 간단히 확인합니다.
+                        </p>
+                    </div>
+
+                    <div class="bg-white rounded-3xl p-5 border border-rose-100 shadow-sm relative">
+                        <span class="inline-block px-2.5 py-1 rounded-lg bg-rose-500 text-white text-xs font-extrabold mb-3">STEP 03</span>
+                        <h3 class="font-extrabold text-charcoal-900 text-base mb-1.5">전문의 1:1 상담</h3>
+                        <p class="text-xs sm:text-sm text-charcoal-700 leading-relaxed">
+                            진료실에서 전문의와 상담합니다. 준비한 문진 메모를 보여주시면 빠르고 정확하게 소통할 수 있습니다.
+                        </p>
+                    </div>
+
+                    <div class="bg-white rounded-3xl p-5 border border-rose-100 shadow-sm relative">
+                        <span class="inline-block px-2.5 py-1 rounded-lg bg-rose-500 text-white text-xs font-extrabold mb-3">STEP 04</span>
+                        <h3 class="font-extrabold text-charcoal-900 text-base mb-1.5">맞춤형 초음파·검사</h3>
+                        <p class="text-xs sm:text-sm text-charcoal-700 leading-relaxed">
+                            환자분의 상황과 동의 하에 복부·항문·질 초음파 중 적합한 방식이나 혈액·분비물 검사를 진행합니다.
+                        </p>
+                    </div>
+
+                    <div class="bg-white rounded-3xl p-5 border border-rose-100 shadow-sm relative">
+                        <span class="inline-block px-2.5 py-1 rounded-lg bg-rose-500 text-white text-xs font-extrabold mb-3">STEP 05</span>
+                        <h3 class="font-extrabold text-charcoal-900 text-base mb-1.5">결과 설명 및 처방</h3>
+                        <p class="text-xs sm:text-sm text-charcoal-700 leading-relaxed">
+                            초음파 영상을 함께 보며 자궁·난소 상태를 설명 듣고, 필요한 약 처방과 다음 내원 일정을 안내받습니다.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 초음파 방식별 안심 비교 가이드 -->
+                <div class="bg-white rounded-3xl p-6 sm:p-8 border border-rose-200 shadow-md">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 mb-6 border-b border-gray-100">
+                        <div>
+                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-800 text-xs font-bold mb-2">
+                                <i data-lucide="shield-check" class="w-4 h-4 text-teal-600"></i> 미혼 및 성경험이 없는 여성 안심 안내
+                            </div>
+                            <h3 class="text-xl sm:text-2xl font-extrabold text-charcoal-900">내진과 질 초음파, 모든 환자에게 필수인가요?</h3>
+                        </div>
+                    </div>
+
+                    <!-- 핵심 안심 배너 -->
+                    <div class="bg-teal-50/80 border border-teal-200 rounded-2xl p-5 mb-7 flex items-start gap-3.5">
+                        <div class="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shrink-0 mt-0.5">
+                            <i data-lucide="heart-handshake" class="w-5 h-5"></i>
+                        </div>
+                        <div class="text-sm text-teal-950 leading-relaxed">
+                            <p class="font-extrabold text-base mb-1">아니요! 미혼이거나 성경험이 없는 경우 질 초음파나 내진을 시행하지 않습니다.</p>
+                            <p>
+                                산부인과에서는 초진 문진표와 상담을 통해 환자의 성경험 유무 및 선호도를 먼저 확인합니다. 성경험이 없거나 질 내 기구 삽입을 원하지 않으실 경우, <strong>배 위에서 보는 복부 초음파</strong> 또는 <strong>경직장(항문) 초음파</strong>를 통해 처녀막 손상 없이 자궁과 난소 상태를 안전하고 정확하게 확인합니다.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 3가지 초음파 방식 비교 카드 -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <!-- 1. 복부 초음파 -->
+                        <div class="rounded-2xl p-5 bg-ivory-100 border border-rose-100 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-xs font-extrabold">비침습 · 통증 없음</span>
+                                    <i data-lucide="scan" class="w-5 h-5 text-rose-500"></i>
+                                </div>
+                                <h4 class="text-lg font-extrabold text-charcoal-900 mb-2">1. 복부 초음파 (Transabdominal)</h4>
+                                <p class="text-xs sm:text-sm text-charcoal-700 leading-relaxed mb-3">
+                                    아랫배 피부 위에 초음파 젤을 바르고 탐촉자를 대어 자궁과 난소를 관찰하는 가장 부담 없는 검사 방식입니다.
+                                </p>
+                            </div>
+                            <div class="bg-white rounded-xl p-3 text-xs text-gray-600 border border-gray-100">
+                                <strong class="text-charcoal-900 block mb-0.5">💡 검사 팁:</strong>
+                                방광에 소변이 적당히 차 있어야 자궁이 선명하게 보이므로 진료 1시간 전 물을 충분히 드시는 것이 좋습니다.
+                            </div>
+                        </div>
+
+                        <!-- 2. 경직장(항문) 초음파 -->
+                        <div class="rounded-2xl p-5 bg-ivory-100 border border-rose-100 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="px-2.5 py-1 rounded-lg bg-sky-100 text-sky-800 text-xs font-extrabold">미혼 여성 정밀 검사</span>
+                                    <i data-lucide="microscope" class="w-5 h-5 text-rose-500"></i>
+                                </div>
+                                <h4 class="text-lg font-extrabold text-charcoal-900 mb-2">2. 경직장(항문) 초음파 (Transrectal)</h4>
+                                <p class="text-xs sm:text-sm text-charcoal-700 leading-relaxed mb-3">
+                                    성경험이 없는 여성에서 복부 초음파만으로 작은 난소 낭종이나 자궁내막 병변이 잘 보이지 않을 때 사용하는 정밀 검사법입니다.
+                                </p>
+                            </div>
+                            <div class="bg-white rounded-xl p-3 text-xs text-gray-600 border border-gray-100">
+                                <strong class="text-charcoal-900 block mb-0.5">💡 검사 팁:</strong>
+                                가느다란 전용 탐촉자에 젤을 충분히 도포하여 수십 초~1분 내외로 진행되며, 배변이 마려운 듯한 뻐근함 정도만 느껴집니다.
+                            </div>
+                        </div>
+
+                        <!-- 3. 질 초음파 -->
+                        <div class="rounded-2xl p-5 bg-ivory-100 border border-rose-100 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="px-2.5 py-1 rounded-lg bg-rose-100 text-rose-800 text-xs font-extrabold">성경험 여성 표준 정밀</span>
+                                    <i data-lucide="activity" class="w-5 h-5 text-rose-500"></i>
+                                </div>
+                                <h4 class="text-lg font-extrabold text-charcoal-900 mb-2">3. 질 초음파 (Transvaginal)</h4>
+                                <p class="text-xs sm:text-sm text-charcoal-700 leading-relaxed mb-3">
+                                    성경험이 있는 여성에서 자궁과 난소 가장 가까운 위치에서 고해상도로 관찰할 수 있는 표준 초음파 검사입니다.
+                                </p>
+                            </div>
+                            <div class="bg-white rounded-xl p-3 text-xs text-gray-600 border border-gray-100">
+                                <strong class="text-charcoal-900 block mb-0.5">💡 검사 팁:</strong>
+                                복부 초음파와 달리 방광을 완전히 비운 상태(검사 직전 화장실 이용)에서 진행해야 더욱 선명하게 보입니다.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ===================================================================== -->
+        <!-- 4. ATTIRE & BOOKING TIPS: 진료 전 알아두면 좋은 복장 및 예약 팁         -->
+        <!-- ===================================================================== -->
+        <section id="sec-tips" class="py-12 md:py-16 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-20">
+            <div class="mb-8">
+                <span class="text-rose-600 font-bold text-xs sm:text-sm tracking-wider uppercase block mb-1">Step 03 · Smart Tips</span>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-charcoal-900">진료 전 알아두면 좋은 복장 및 예약 팁</h2>
+                <p class="text-sm sm:text-base text-charcoal-700 mt-2">
+                    작은 준비만으로도 병원 대기 시간을 줄이고 훨씬 쾌적하게 진료를 받으실 수 있습니다.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <!-- 팁 1 -->
+                <div class="bg-white rounded-3xl p-6 border border-rose-100 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mb-4">
+                        <i data-lucide="shirt" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="font-extrabold text-charcoal-900 text-base mb-2">상·하의가 분리된 옷이나 플레어 치마</h3>
+                    <p class="text-xs sm:text-sm text-charcoal-700 leading-relaxed">
+                        복부 초음파 시 배를 살짝 걷어 올리고, 하체 초음파 시 하의를 탈의해야 합니다. 타이트한 스키니진이나 점프수트보다는 <strong>치마나 통 넓은 바지</strong>가 훨씬 편합니다.
+                    </p>
+                </div>
+
+                <!-- 팁 2 -->
+                <div class="bg-white rounded-3xl p-6 border border-rose-100 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4">
+                        <i data-lucide="clock" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="font-extrabold text-charcoal-900 text-base mb-2">사전 예약 및 한산한 시간대 활용</h3>
+                    <p class="text-xs sm:text-sm text-charcoal-700 leading-relaxed">
+                        월요일 오전과 토요일 오전은 산전 검진 및 일반 진료 환자가 몰려 대기가 길어집니다. <strong>화~목요일 평일 오전 10~11시 또는 오후 2~4시</strong> 예약을 추천합니다.
+                    </p>
+                </div>
+
+                <!-- 팁 3 -->
+                <div class="bg-white rounded-3xl p-6 border border-rose-100 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mb-4">
+                        <i data-lucide="sparkles" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="font-extrabold text-charcoal-900 text-base mb-2">과도한 질 세정제 사용 자제</h3>
+                    <p class="text-xs sm:text-sm text-charcoal-700 leading-relaxed">
+                        질염이나 분비물 이상으로 내원할 때는 방문 당일 <strong>질 내부를 세정제로 씻어내지 마세요</strong>. 원인균 채취가 어려워져 정확한 진단이 늦어질 수 있습니다.
+                    </p>
+                </div>
+
+                <!-- 팁 4 -->
+                <div class="bg-white rounded-3xl p-6 border border-rose-100 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="w-12 h-12 rounded-2xl bg-pink-50 text-pink-600 flex items-center justify-center mb-4">
+                        <i data-lucide="user-check" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="font-extrabold text-charcoal-900 text-base mb-2">여의사 전문의 진료 여부 확인</h3>
+                    <p class="text-xs sm:text-sm text-charcoal-700 leading-relaxed">
+                        남성 의료진 앞에서의 진찰이 심리적으로 부담스럽다면, 병원 홈페이지나 예약 앱에서 <strong>산부인과 여의사 전문의 진료 시간표</strong>를 미리 확인하고 지정 예약하세요.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ===================================================================== -->
+        <!-- 5. INTERACTIVE FAQ ACCORDION: 자주 묻는 질문 (FAQ)                     -->
+        <!-- ===================================================================== -->
+        <section id="sec-faq" class="py-12 md:py-16 bg-ivory-100 border-t border-rose-100/80 scroll-mt-20">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-10">
+                    <span class="text-rose-600 font-bold text-xs sm:text-sm tracking-wider uppercase block mb-1">Step 04 · Q&A</span>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-charcoal-900 mb-2">산부인과 방문 자주 묻는 질문 (FAQ)</h2>
+                    <p class="text-sm sm:text-base text-charcoal-700">
+                        초진 환자분들이 가장 많이 궁금해하시는 현실적인 질문과 답변을 모았습니다.
+                    </p>
+                </div>
+
+                <div class="space-y-3.5" id="faq-list">
+                    <!-- FAQ 1 -->
+                    <div class="bg-white rounded-2xl border border-rose-100 shadow-sm overflow-hidden">
+                        <button type="button" onclick="toggleFaq(this)" aria-expanded="true" class="w-full px-6 py-4.5 text-left flex items-center justify-between gap-4 hover:bg-rose-50/40 transition-colors">
+                            <span class="font-extrabold text-charcoal-900 text-sm sm:text-base">
+                                <span class="text-rose-500 mr-1.5">Q1.</span> 생리 중인데 산부인과에 방문해도 진찰과 검사가 가능한가요?
+                            </span>
+                            <i data-lucide="chevron-down" class="w-5 h-5 text-rose-500 shrink-0 transition-transform duration-200 rotate-180"></i>
+                        </button>
+                        <div class="faq-panel px-6 pb-5 pt-1 text-sm text-charcoal-700 leading-relaxed border-t border-gray-50">
+                            <strong>네, 생리 중에도 방문 및 진료가 가능합니다.</strong> 특히 평소보다 출혈량이 너무 많거나(과다출혈), 생리통이 극심할 때는 증상이 있는 시점에 내원하시는 것이 상태 파악에 도움이 됩니다. 초음파 검사, 빈혈 검사, 지혈제·진통제 처방 모두 가능하며, 다낭성난소증후군 관련 호르몬 혈액검사는 오히려 <strong>생리 시작 후 2~4일째</strong>에 가장 정확합니다. 다만 자궁경부암 세포진 검사나 질염 분비물 검사는 생리가 완전히 끝난 뒤 받으시는 것이 좋습니다.
+                        </div>
+                    </div>
+
+                    <!-- FAQ 2 -->
+                    <div class="bg-white rounded-2xl border border-rose-100 shadow-sm overflow-hidden">
+                        <button type="button" onclick="toggleFaq(this)" aria-expanded="false" class="w-full px-6 py-4.5 text-left flex items-center justify-between gap-4 hover:bg-rose-50/40 transition-colors">
+                            <span class="font-extrabold text-charcoal-900 text-sm sm:text-base">
+                                <span class="text-rose-500 mr-1.5">Q2.</span> 학생이나 미성년자도 혼자 갈 수 있나요? 진료 기록 비밀이 보장되나요?
+                            </span>
+                            <i data-lucide="chevron-down" class="w-5 h-5 text-rose-500 shrink-0 transition-transform duration-200"></i>
+                        </button>
+                        <div class="faq-panel hidden px-6 pb-5 pt-1 text-sm text-charcoal-700 leading-relaxed border-t border-gray-50">
+                            <strong>네, 학생과 미성년자도 혼자 내원하여 진료를 받을 수 있으며 모든 진료 기록은 철저히 비밀이 보장됩니다.</strong> 의료법상 환자의 동의 없이 보호자나 학교, 직장에 진료 내역이 통보되지 않습니다. 건강보험 공단 홈페이지나 앱에서도 본인 인증 없이는 타인이 상세 상병명(진단명)을 조회할 수 없으며, 필요 시 일반 비급여 진료 선택도 가능합니다. (단, 수술이나 마취가 필요한 시술의 경우에만 법정대리인 동의가 필요합니다.)
+                        </div>
+                    </div>
+
+                    <!-- FAQ 3 -->
+                    <div class="bg-white rounded-2xl border border-rose-100 shadow-sm overflow-hidden">
+                        <button type="button" onclick="toggleFaq(this)" aria-expanded="false" class="w-full px-6 py-4.5 text-left flex items-center justify-between gap-4 hover:bg-rose-50/40 transition-colors">
+                            <span class="font-extrabold text-charcoal-900 text-sm sm:text-base">
+                                <span class="text-rose-500 mr-1.5">Q3.</span> 산부인과 초음파 검사를 받을 때 많이 아픈가요?
+                            </span>
+                            <i data-lucide="chevron-down" class="w-5 h-5 text-rose-500 shrink-0 transition-transform duration-200"></i>
+                        </button>
+                        <div class="faq-panel hidden px-6 pb-5 pt-1 text-sm text-charcoal-700 leading-relaxed border-t border-gray-50">
+                            <strong>복부 초음파는 아랫배 위에 초음파 기기를 대고 문지르는 방식이므로 통증이 전혀 없습니다.</strong> 경직장(항문) 초음파나 질 초음파의 경우에도 윤활 젤을 충분히 사용하여 진행하므로 날카로운 통증은 거의 없으며, 순간적으로 묵직하거나 압박되는 느낌 정도만 듭니다. 검사 중 긴장해서 골반 근육에 힘을 주면 불편감이 커질 수 있으므로, <strong>입으로 천천히 심호흡을 하며 아랫배의 힘을 빼주시면</strong> 1~2분 내로 훨씬 편안하게 끝납니다.
+                        </div>
+                    </div>
+
+                    <!-- FAQ 4 -->
+                    <div class="bg-white rounded-2xl border border-rose-100 shadow-sm overflow-hidden">
+                        <button type="button" onclick="toggleFaq(this)" aria-expanded="false" class="w-full px-6 py-4.5 text-left flex items-center justify-between gap-4 hover:bg-rose-50/40 transition-colors">
+                            <span class="font-extrabold text-charcoal-900 text-sm sm:text-base">
+                                <span class="text-rose-500 mr-1.5">Q4.</span> 생리통이나 생리불순으로 초음파를 보면 건강보험 적용이 되나요?
+                            </span>
+                            <i data-lucide="chevron-down" class="w-5 h-5 text-rose-500 shrink-0 transition-transform duration-200"></i>
+                        </button>
+                        <div class="faq-panel hidden px-6 pb-5 pt-1 text-sm text-charcoal-700 leading-relaxed border-t border-gray-50">
+                            <strong>네, 증상 치료 목적의 여성 생식기 초음파는 건강보험 급여가 적용됩니다.</strong> 심한 생리통, 월경불순, 과다출혈, 부정출혈, 하복부 통증 등 의학적 증상이 있어 의사가 질환 감별을 위해 초음파 검사를 시행하는 경우 건강보험 혜택이 적용되어 의원급 기준 <strong>진찰료 포함 약 2만 원~4만 원대</strong> 수준입니다. (단, 아무런 증상 없이 단순 건강검진 목적으로 받는 초음파는 비급여로 책정됩니다.)
+                        </div>
+                    </div>
+
+                    <!-- FAQ 5 -->
+                    <div class="bg-white rounded-2xl border border-rose-100 shadow-sm overflow-hidden">
+                        <button type="button" onclick="toggleFaq(this)" aria-expanded="false" class="w-full px-6 py-4.5 text-left flex items-center justify-between gap-4 hover:bg-rose-50/40 transition-colors">
+                            <span class="font-extrabold text-charcoal-900 text-sm sm:text-base">
+                                <span class="text-rose-500 mr-1.5">Q5.</span> 동네 산부인과(의원)와 큰 종합병원 중 어디로 먼저 가야 하나요?
+                            </span>
+                            <i data-lucide="chevron-down" class="w-5 h-5 text-rose-500 shrink-0 transition-transform duration-200"></i>
+                        </button>
+                        <div class="faq-panel hidden px-6 pb-5 pt-1 text-sm text-charcoal-700 leading-relaxed border-t border-gray-50">
+                            <strong>초진의 경우 집이나 학교·직장에서 가까운 '산부인과 전문의 의원(1차 의료기관)'을 먼저 방문하시는 것을 권장합니다.</strong> 대학병원이나 상급종합병원은 초진 예약 대기 기간이 길고 진료의뢰서가 필요하며 진료비 본인부담률도 높습니다. 동네 산부인과 전문의 의원에서 기본 초음파와 혈액검사를 신속히 받으신 뒤, 만약 수술적 치료나 고난도 정밀 검사가 필요한 소견이 나오면 의사의 진료의뢰서를 받아 큰 병원으로 전원하시면 됩니다.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ===================================================================== -->
+        <!-- 6. MEDICAL DISCLAIMER & ACTION CTA: 의료적 면책 조항 및 병원 찾기 CTA    -->
+        <!-- ===================================================================== -->
+        <section class="py-12 md:py-16 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- 병원 찾기 및 메모 복사 행동 유도 배너 -->
+            <div class="bg-gradient-to-r from-rose-500 to-pink-600 rounded-3xl p-7 sm:p-10 text-white shadow-xl shadow-rose-200/70 mb-10 flex flex-col lg:flex-row items-center justify-between gap-6">
+                <div class="text-center lg:text-left">
+                    <span class="inline-block px-3 py-1 rounded-full bg-white/20 text-white text-xs font-bold mb-3">지금 바로 행동으로 옮겨보세요</span>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold mb-2">내 주변 산부인과 전문의 병원 찾기</h2>
+                    <p class="text-rose-100 text-sm sm:text-base max-w-2xl leading-relaxed">
+                        건강보험심사평가원 공식 '우리지역 좋은 병원 찾기' 서비스에서 거주지 주변 산부인과 전문의 의원과 야간·토요일 진료 여부를 바로 확인하실 수 있습니다.
+                    </p>
+                </div>
+                <div class="flex flex-col sm:flex-row items-center gap-3 shrink-0 w-full sm:w-auto">
+                    <a href="https://www.hira.or.kr/ra/hosp/getHealthMap.do?pgmid=HIRAA030002010000" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto px-6 py-4 rounded-2xl bg-white text-rose-600 hover:bg-rose-50 font-extrabold text-sm sm:text-base shadow-md transition-all flex items-center justify-center gap-2">
+                        <i data-lucide="map-pin" class="w-5 h-5"></i>
+                        심평원 내 주변 산부인과 찾기
+                    </a>
+                    <button type="button" onclick="copyMemoToClipboard()" class="w-full sm:w-auto px-5 py-4 rounded-2xl bg-rose-700/60 hover:bg-rose-700/80 text-white border border-white/30 font-bold text-sm sm:text-base transition-all flex items-center justify-center gap-2">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                        작성한 문진 메모 복사
+                    </button>
+                </div>
+            </div>
+
+            <!-- 의료적 면책 조항 (Medical Disclaimer) 강조 박스 -->
+            <div class="bg-gray-100 border-2 border-gray-300 rounded-3xl p-6 sm:p-8">
+                <div class="flex items-start gap-4">
+                    <div class="w-11 h-11 rounded-2xl bg-charcoal-800 text-white flex items-center justify-center shrink-0 mt-0.5">
+                        <i data-lucide="scale" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base sm:text-lg font-extrabold text-charcoal-900 mb-2.5">⚖️ 의료적 면책 조항 (Medical Disclaimer)</h3>
+                        <ul class="text-xs sm:text-sm text-charcoal-700 space-y-2 leading-relaxed">
+                            <li>
+                                <strong>1. 정보 제공 목적:</strong> 본 페이지(블룸케어 산부인과 방문 가이드 및 안내)에 수록된 초진 준비 안내, 초음파 설명, 건강보험 급여 기준 및 FAQ는 일반적인 의학 상식과 보건의료 제도를 바탕으로 환자의 병원 이용을 돕기 위해 제작된 <strong>건강 정보 제공 목적</strong>의 콘텐츠입니다.
+                            </li>
+                            <li>
+                                <strong>2. 전문의 진료 대체 불가:</strong> 본 안내 내용은 <strong>의학적 진단, 진찰, 처방 또는 산부인과 전문의의 개별적인 의학적 소견을 절대 대신할 수 없습니다.</strong> 실제 검사 방식(복부·항문·질 초음파 등)과 건강보험 적용 여부는 환자의 임상 상태 및 의료기관의 판단에 따라 달라질 수 있습니다.
+                            </li>
+                            <li>
+                                <strong>3. 응급 상황 대처:</strong> 1~2시간마다 대형 패드가 젖는 극심한 출혈, 실신, 고열(38℃ 이상), 참을 수 없는 급성 하복부 통증이 동반될 경우 즉시 <strong>119 또는 가까운 응급의료기관</strong>을 방문하시기 바랍니다.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 하단 푸터 -->
+    <footer class="bg-white border-t border-rose-100 mt-8">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
+            <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-lg bg-rose-500 text-white flex items-center justify-center">
+                    <i data-lucide="flower-2" class="w-3.5 h-3.5"></i>
+                </span>
+                <span class="font-bold text-charcoal-800">BloomCare 산부인과 방문 가이드</span>
+                <span class="hidden sm:inline text-gray-300">|</span>
+                <span class="hidden sm:inline">가임기 여성을 위한 초진 안내 포털</span>
+            </div>
+            <p>긴급 의료 상담: 119 응급의료정보센터 · 보건복지상담센터 129</p>
+        </div>
+    </footer>
+
+    <!-- ===================================================================== -->
+    <!-- JavaScript: 체크리스트 진행률, 문진 메모 복사, FAQ 아코디언, 토스트 알림 -->
+    <!-- ===================================================================== -->
+    <script>
+        // 토스트 알림 표시 함수 (alert() 미사용)
+        let toastTimer = null;
+        function showToast(message) {
+            const box = document.getElementById('toast-box');
+            const msgEl = document.getElementById('toast-message');
+            msgEl.textContent = message;
+
+            box.classList.remove('opacity-0', 'translate-y-3');
+            box.classList.add('opacity-100', 'translate-y-0');
+
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                box.classList.remove('opacity-100', 'translate-y-0');
+                box.classList.add('opacity-0', 'translate-y-3');
+            }, 2800);
+        }
+
+        // 초진 준비 체크리스트 진행률 업데이트
+        function updatePrepProgress() {
+            const total = document.querySelectorAll('.prep-cb').length;
+            const checked = document.querySelectorAll('.prep-cb:checked').length;
+            const badge = document.getElementById('prep-progress-badge');
+
+            badge.textContent = `${checked} / ${total} 완료`;
+            if (checked === total) {
+                badge.className = "px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-extrabold border border-emerald-200";
+                showToast("모든 초진 준비물 체크가 완료되었습니다!");
+            } else {
+                badge.className = "px-3 py-1 rounded-full bg-rose-50 text-rose-600 text-xs font-extrabold border border-rose-200";
+            }
+        }
+
+        // 증상 태그 토글 버튼
+        function toggleSymptomTag(btn) {
+            const isSelected = btn.classList.contains('bg-rose-500');
+            if (isSelected) {
+                btn.className = "symptom-tag px-3 py-1.5 rounded-xl text-xs font-semibold bg-ivory-100 text-charcoal-700 border border-gray-200 hover:border-rose-300 transition-all";
+            } else {
+                btn.className = "symptom-tag px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-500 text-white border border-rose-500 shadow-sm transition-all";
+            }
+        }
+
+        // 문진 메모 클립보드 복사 (iFrame 호환 document.execCommand('copy') 사용)
+        function copyMemoToClipboard() {
+            const lmp = document.getElementById('memo-lmp').value.trim() || "미입력";
+            const cycle = document.getElementById('memo-cycle').value.trim() || "미입력";
+            const meds = document.getElementById('memo-meds').value.trim() || "없음 / 미입력";
+            const notes = document.getElementById('memo-notes').value.trim() || "없음";
+
+            const selectedTags = Array.from(document.querySelectorAll('.symptom-tag.bg-rose-500'))
+                .map(el => el.textContent.trim());
+            const symptomText = selectedTags.length > 0 ? selectedTags.join(', ') : "선택 안 함";
+
+            const formattedMemo = [
+                "[산부인과 초진 문진 메모]",
+                `• 마지막 생리 시작일: ${lmp}`,
+                `• 평소 생리 주기/기간: ${cycle}`,
+                `• 주요 불편 증상: ${symptomText}`,
+                `• 복용 중인 약물/진통제: ${meds}`,
+                `• 질문 및 상세 메모: ${notes}`
+            ].join('\n');
+
+            // 임시 textarea를 활용한 안전한 클립보드 복사
+            const tempTextarea = document.createElement('textarea');
+            tempTextarea.value = formattedMemo;
+            tempTextarea.style.position = 'fixed';
+            tempTextarea.style.left = '-9999px';
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showToast("문진 메모가 클립보드에 복사되었습니다! 메모장이나 카톡에 붙여넣기 하세요.");
+                } else {
+                    showToast("복사에 실패했습니다. 화면의 내용을 직접 선택해 복사해 주세요.");
+                }
+            } catch (err) {
+                showToast("복사 중 오류가 발생했습니다.");
+            } finally {
+                document.body.removeChild(tempTextarea);
+            }
+        }
+
+        // 문진 메모 폼 초기화
+        function clearMemoForm() {
+            document.getElementById('memo-lmp').value = '';
+            document.getElementById('memo-cycle').value = '';
+            document.getElementById('memo-meds').value = '';
+            document.getElementById('memo-notes').value = '';
+            document.querySelectorAll('.symptom-tag').forEach(btn => {
+                btn.className = "symptom-tag px-3 py-1.5 rounded-xl text-xs font-semibold bg-ivory-100 text-charcoal-700 border border-gray-200 hover:border-rose-300 transition-all";
+            });
+            showToast("작성 중인 문진 메모가 초기화되었습니다.");
+        }
+
+        // FAQ 아코디언 토글
+        function toggleFaq(btn) {
+            const panel = btn.nextElementSibling;
+            const icon = btn.querySelector('svg');
+            const isHidden = panel.classList.contains('hidden');
+
+            panel.classList.toggle('hidden');
+            btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+            if (icon) {
+                icon.classList.toggle('rotate-180');
+            }
+        }
+
+        // 초기화
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
